@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Figure Extractor — AugmentedMD</title>
+  <meta name="description" content="Extract the first page and figures from journal article PDFs as high-resolution SVG files. Runs entirely in your browser.">
+  <style>
+/* {{CSS}} */
+  </style>
+</head>
+<body>
+  <div class="brand-bar"></div>
+  <header class="header">
+    <div class="brand">
+      <span class="logo">A</span>
+      <span>AugmentedMD</span>
+    </div>
+    <div class="header-right">
+      <div class="engine">On-device · Private</div>
+      <div class="brand"><span>Figure Extractor</span><span class="shield">&#10003;</span></div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="eyebrow">Journal articles · SVG export</div>
+      <h1>Pull the first page and every figure <em>as high-resolution SVGs.</em></h1>
+      <p class="sub">Upload a journal PDF. Extraction runs on this device—download figures one-by-one or as a ZIP. Nothing is uploaded to a server.</p>
+    </section>
+
+    <section class="workspace">
+      <div class="panel">
+        <div class="panel-head">
+          <div><span class="step">1</span><h2>Upload article</h2></div>
+          <button class="link" id="clear" type="button" disabled>Clear</button>
+        </div>
+        <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload PDF journal article">
+          <div class="dropzone-icon">PDF</div>
+          <h3>Drop a journal PDF here</h3>
+          <p>Or click to choose a file. First page and embedded figures become downloadable SVGs.</p>
+          <div class="file-name" id="fileName" hidden></div>
+        </div>
+        <div class="progress" id="progress" aria-live="polite">
+          <div class="progress-label"><strong id="progressText">Working…</strong><span id="progressPct">0%</span></div>
+          <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+        </div>
+        <div class="panel-foot">
+          <span id="summary">Waiting for a PDF.</span>
+          <span id="statusDetail"></span>
+        </div>
+      </div>
+    </section>
+
+    <div class="action-bar">
+      <label class="scrub file-btn">Choose PDF<input id="file" type="file" accept="application/pdf,.pdf"></label>
+      <button class="scrub" id="extract" type="button" disabled>Extract SVGs</button>
+      <button class="scrub secondary" id="zip" type="button" disabled>Download ZIP</button>
+      <span class="shortcut">Drop a file anywhere in the upload panel</span>
+    </div>
+
+    <section class="panel gallery-shell">
+      <div class="panel-head">
+        <div><span class="step">2</span><h2>Extracted SVGs</h2></div>
+        <button class="link" id="downloadAll" type="button" disabled>Download all</button>
+      </div>
+      <div id="gallery">
+        <div class="gallery-empty">Your first page and figures will appear here after extraction.</div>
+      </div>
+    </section>
+
+    <aside class="notice">
+      <strong>Review before reuse.</strong>
+      Figures are pulled from embedded images in the PDF and wrapped as high-resolution SVGs (native pixel dimensions preserved).
+      Decorative icons and tiny assets are skipped. Respect journal copyright and publisher licenses when redistributing figures.
+    </aside>
+  </main>
+
+  <footer class="site-footer"><span>Tool by @michael_gorin / @AugmentedMD</span></footer>
+  <script type="module">
+/* {{SCRIPT}} */
+  </script>
+</body>
+</html>
