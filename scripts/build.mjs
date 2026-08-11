@@ -35,5 +35,6 @@ const invokedDirectly = process.argv[1] === fileURLToPath(import.meta.url);
 if (invokedDirectly) {
   const html = await buildStandalone();
   await writeFile(join(root, "figure-extractor.html"), html);
-  console.log(`Wrote figure-extractor.html (${html.length.toLocaleString()} bytes)`);
+  await writeFile(join(root, "index.html"), html);
+  console.log(`Wrote figure-extractor.html and index.html (${html.length.toLocaleString()} bytes)`);
 }
