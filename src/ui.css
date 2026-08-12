@@ -98,6 +98,13 @@ main{width:min(1140px,calc(100% - 40px));margin:auto}
 .dropzone p{margin:0;color:var(--muted);font-size:15px;max-width:420px}
 .dropzone .file-name{margin-top:4px;color:var(--blue);font-weight:700;font-size:14px;word-break:break-all}
 .panel-foot{min-height:60px;border-top:1px solid var(--border);background:var(--card);color:var(--muted);font-size:13px}
+.quality-label{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--navy);font-size:13px;font-weight:700
+}
+.quality-label select{
+  max-width:220px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;
+  color:var(--blue);background:var(--white);font-size:13px;font-weight:700
+}
 
 .action-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;margin:8px 0 32px}
 .scrub{

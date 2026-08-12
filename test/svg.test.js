@@ -11,6 +11,12 @@ import {
   isValidCrop,
   normalizeCropRect,
 } from "../src/crop.js";
+import {
+  DEFAULT_QUALITY_ID,
+  dpiToScale,
+  getQualityPreset,
+  resolvePageScale,
+} from "../src/quality.js";
 
 describe("articleSlug", () => {
   it("strips pdf extension and normalizes", () => {
@@ -63,12 +69,42 @@ describe("normalizeCropRect", () => {
 
 describe("displayRectToImageRect", () => {
   it("maps contain-fit display coords to image pixels", () => {
-    // Image 200x100 shown in 400x400 box → rendered 400x200, offsetY=100
     const mapped = displayRectToImageRect(
       { x: 0, y: 100, width: 400, height: 200 },
       { width: 400, height: 400 },
       { width: 200, height: 100 },
     );
     assert.deepEqual(mapped, { x: 0, y: 0, width: 200, height: 100 });
+  });
+});
+
+describe("quality / DPI", () => {
+  it("defaults to print 300 DPI", () => {
+    assert.equal(getQualityPreset(DEFAULT_QUALITY_ID).dpi, 300);
+    assert.equal(dpiToScale(300), 300 / 72);
+  });
+
+  it("caps scale so canvas stays within max side", () => {
+    const page = {
+      getViewport({ scale }) {
+        return { width: 612 * scale, height: 792 * scale };
+      },
+    };
+    const plan = resolvePageScale(page, 600, 4096);
+    assert.equal(plan.capped, true);
+    assert.ok(plan.width <= 4096);
+    assert.ok(plan.height <= 4096);
+    assert.ok(plan.dpi < 600);
+  });
+
+  it("keeps requested DPI when page fits", () => {
+    const page = {
+      getViewport({ scale }) {
+        return { width: 200 * scale, height: 200 * scale };
+      },
+    };
+    const plan = resolvePageScale(page, 300, 8192);
+    assert.equal(plan.capped, false);
+    assert.equal(plan.dpi, 300);
   });
 });

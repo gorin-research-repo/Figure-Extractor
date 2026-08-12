@@ -11,6 +11,7 @@ describe("standalone build", () => {
     assert.match(html, /AugmentedMD/);
     assert.match(html, /Extract pages/);
     assert.match(html, /Crop figure/);
+    assert.match(html, /Render quality|300 DPI/);
     assert.match(html, /Download cropped SVG|Download SVG/);
     assert.doesNotMatch(html, /Download ZIP/);
     assert.doesNotMatch(html, /JSZip|jszip/i);
