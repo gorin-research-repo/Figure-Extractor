@@ -9,6 +9,7 @@ import {
   normalizeCropRect,
 } from "./crop.js";
 import { padIndex } from "./svg.js";
+import { getQualityPreset } from "./quality.js";
 
 // Run the pdf.js worker on the main thread (offline single-file friendly).
 globalThis.pdfjsWorker = pdfWorker;
@@ -18,6 +19,7 @@ const fileInput = document.getElementById("file");
 const fileNameEl = document.getElementById("fileName");
 const clearBtn = document.getElementById("clear");
 const extractBtn = document.getElementById("extract");
+const qualitySelect = document.getElementById("quality");
 const summary = document.getElementById("summary");
 const statusDetail = document.getElementById("statusDetail");
 const gallery = document.getElementById("gallery");
@@ -39,7 +41,7 @@ const downloadFullBtn = document.getElementById("downloadFull");
 
 /** @type {{ file: File, buffer: ArrayBuffer } | null} */
 let loaded = null;
-/** @type {{ slug: string, pageCount: number, assets: any[] } | null} */
+/** @type {{ slug: string, pageCount: number, dpi?: number, assets: any[] } | null} */
 let result = null;
 /** @type {any | null} */
 let selected = null;
@@ -50,6 +52,15 @@ let sourceImage = null;
 
 /** @type {null | { mode: "draw" | "move" | "resize", handle?: string, startX: number, startY: number, origin: any }} */
 let drag = null;
+
+function selectedDpi() {
+  return getQualityPreset(qualitySelect?.value).dpi;
+}
+
+function qualityHint() {
+  const preset = getQualityPreset(qualitySelect?.value);
+  return `${preset.label} — ${preset.hint}`;
+}
 
 function setProgress(msg, pct = 0) {
   progress.classList.add("visible");
@@ -88,7 +99,7 @@ async function loadFile(file) {
   clearBtn.disabled = false;
   extractBtn.disabled = false;
   summary.textContent = `${file.name} · ${(file.size / (1024 * 1024)).toFixed(2)} MB`;
-  statusDetail.textContent = "Ready to extract pages.";
+  statusDetail.textContent = `Ready · ${qualityHint()}`;
   gallery.innerHTML = `<div class="gallery-empty">Click <strong>Extract pages</strong> to render this article.</div>`;
   hideProgress();
 }
@@ -101,6 +112,7 @@ function clearAll() {
   clearBtn.disabled = true;
   extractBtn.disabled = true;
   summary.textContent = "Waiting for a PDF.";
+  statusDetail.textContent = "Higher DPI = sharper crops, slower + more memory";
   resetResults();
   hideProgress();
 }
@@ -137,7 +149,7 @@ function renderGallery(assets) {
         <div class="asset-meta">
           <span class="tag">Page</span>
           <h3>${escapeHtml(asset.label)}</h3>
-          <p>${asset.width}&times;${asset.height}px</p>
+          <p>${asset.width}&times;${asset.height}px${asset.dpi ? ` · ${asset.dpi} DPI` : ""}</p>
         </div>
       </div>
     `;
@@ -406,29 +418,36 @@ async function downloadSelected({ fullPage = false } = {}) {
 async function runExtract() {
   if (!loaded) return;
   extractBtn.disabled = true;
-  setProgress("Starting…", 2);
+  if (qualitySelect) qualitySelect.disabled = true;
+  const dpi = selectedDpi();
+  setProgress(`Starting at ${dpi} DPI…`, 2);
   try {
     const data = loaded.buffer.slice(0);
     result = await extractFromPdf(data, {
       pdfjs,
       filename: loaded.file.name,
+      dpi,
       onProgress: setProgress,
     });
     selected = null;
     displayCrop = null;
     cropPanel.hidden = true;
     renderGallery(result.assets);
-    summary.textContent = `${loaded.file.name} · ${result.pageCount} page${result.pageCount === 1 ? "" : "s"}`;
+    const dpiLabel = result.capped
+      ? `${result.dpi} DPI (capped from ${result.requestedDpi})`
+      : `${result.dpi} DPI`;
+    summary.textContent = `${loaded.file.name} · ${result.pageCount} page${result.pageCount === 1 ? "" : "s"} · ${dpiLabel}`;
     statusDetail.textContent = `${result.assets.length} page SVG${result.assets.length === 1 ? "" : "s"} ready — select one to crop.`;
     pageHint.textContent = "Choose a page to crop";
   } catch (err) {
     console.error(err);
     summary.textContent = "Extraction failed.";
     statusDetail.textContent = err?.message || "Unknown error";
-    gallery.innerHTML = `<div class="gallery-empty">Could not process this PDF. Try another file.</div>`;
+    gallery.innerHTML = `<div class="gallery-empty">Could not process this PDF. Try another file${dpi >= 450 ? " or a lower DPI" : ""}.</div>`;
     result = null;
   } finally {
     extractBtn.disabled = !loaded;
+    if (qualitySelect) qualitySelect.disabled = false;
     hideProgress();
   }
 }
@@ -466,6 +485,11 @@ fileInput.addEventListener("change", () => {
 
 clearBtn.addEventListener("click", clearAll);
 extractBtn.addEventListener("click", runExtract);
+qualitySelect?.addEventListener("change", () => {
+  if (loaded && !result) statusDetail.textContent = `Ready · ${qualityHint()}`;
+  else if (!loaded) statusDetail.textContent = `${qualityHint()}. Higher DPI uses more memory.`;
+  else statusDetail.textContent = `Quality set to ${qualityHint()} — re-extract to apply.`;
+});
 resetCropBtn.addEventListener("click", () => {
   displayCrop = null;
   updateCropUi();

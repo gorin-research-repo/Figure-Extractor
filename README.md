@@ -14,10 +14,11 @@ npm start
 Visit [http://localhost:8080/](http://localhost:8080/) (or `figure-extractor.html`).
 
 1. Drop or choose a journal PDF  
-2. Click **Extract pages**  
-3. Select a page  
-4. Drag to crop the figure  
-5. **Download SVG** (cropped) or **Download full page**
+2. Choose render quality (default **Print · 300 DPI**)  
+3. Click **Extract pages**  
+4. Select a page, crop the figure, download SVG  
+
+Higher DPI (450 / 600) makes sharper crops but uses more memory and may be capped on very large pages.
 
 ## Develop
 

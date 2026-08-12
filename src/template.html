@@ -47,7 +47,14 @@
         </div>
         <div class="panel-foot">
           <span id="summary">Waiting for a PDF.</span>
-          <span id="statusDetail"></span>
+          <label class="quality-label">Render quality
+            <select id="quality" aria-label="Render quality DPI">
+              <option value="screen">Screen · 150 DPI</option>
+              <option value="print" selected>Print · 300 DPI</option>
+              <option value="ultra">Ultra · 450 DPI</option>
+              <option value="max">Max · 600 DPI</option>
+            </select>
+          </label>
         </div>
       </div>
     </section>
@@ -55,7 +62,7 @@
     <div class="action-bar">
       <label class="scrub file-btn">Choose PDF<input id="file" type="file" accept="application/pdf,.pdf"></label>
       <button class="scrub" id="extract" type="button" disabled>Extract pages</button>
-      <span class="shortcut">Drop a file anywhere in the upload panel</span>
+      <span class="shortcut" id="statusDetail">Higher DPI = sharper crops, slower + more memory</span>
     </div>
 
     <section class="panel gallery-shell">
@@ -98,8 +105,8 @@
 
     <aside class="notice">
       <strong>Review before reuse.</strong>
-      Pages are rendered at high resolution and wrapped as SVGs. Crop to isolate a figure or panel.
-      Respect journal copyright and publisher licenses when redistributing figures.
+      Pages are rasterized at your chosen DPI (default 300) and wrapped as SVGs, so crops keep the full figure—labels, panels, and all.
+      Max quality uses more memory and may be capped on very large pages. Respect journal copyright and publisher licenses when redistributing figures.
     </aside>
   </main>
 

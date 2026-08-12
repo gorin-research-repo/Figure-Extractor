@@ -106,6 +106,13 @@ main{width:min(1140px,calc(100% - 40px));margin:auto}
 .dropzone p{margin:0;color:var(--muted);font-size:15px;max-width:420px}
 .dropzone .file-name{margin-top:4px;color:var(--blue);font-weight:700;font-size:14px;word-break:break-all}
 .panel-foot{min-height:60px;border-top:1px solid var(--border);background:var(--card);color:var(--muted);font-size:13px}
+.quality-label{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--navy);font-size:13px;font-weight:700
+}
+.quality-label select{
+  max-width:220px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;
+  color:var(--blue);background:var(--white);font-size:13px;font-weight:700
+}
 
 .action-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center;margin:8px 0 32px}
 .scrub{
@@ -266,7 +273,14 @@ main{width:min(1140px,calc(100% - 40px));margin:auto}
         </div>
         <div class="panel-foot">
           <span id="summary">Waiting for a PDF.</span>
-          <span id="statusDetail"></span>
+          <label class="quality-label">Render quality
+            <select id="quality" aria-label="Render quality DPI">
+              <option value="screen">Screen · 150 DPI</option>
+              <option value="print" selected>Print · 300 DPI</option>
+              <option value="ultra">Ultra · 450 DPI</option>
+              <option value="max">Max · 600 DPI</option>
+            </select>
+          </label>
         </div>
       </div>
     </section>
@@ -274,7 +288,7 @@ main{width:min(1140px,calc(100% - 40px));margin:auto}
     <div class="action-bar">
       <label class="scrub file-btn">Choose PDF<input id="file" type="file" accept="application/pdf,.pdf"></label>
       <button class="scrub" id="extract" type="button" disabled>Extract pages</button>
-      <span class="shortcut">Drop a file anywhere in the upload panel</span>
+      <span class="shortcut" id="statusDetail">Higher DPI = sharper crops, slower + more memory</span>
     </div>
 
     <section class="panel gallery-shell">
@@ -317,8 +331,8 @@ main{width:min(1140px,calc(100% - 40px));margin:auto}
 
     <aside class="notice">
       <strong>Review before reuse.</strong>
-      Pages are rendered at high resolution and wrapped as SVGs. Crop to isolate a figure or panel.
-      Respect journal copyright and publisher licenses when redistributing figures.
+      Pages are rasterized at your chosen DPI (default 300) and wrapped as SVGs, so crops keep the full figure—labels, panels, and all.
+      Max quality uses more memory and may be capped on very large pages. Respect journal copyright and publisher licenses when redistributing figures.
     </aside>
   </main>
 
@@ -73979,15 +73993,69 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
     return String(n2).padStart(width, "0");
   }
 
+  // src/quality.js
+  var PDF_DPI = 72;
+  var MAX_CANVAS_SIDE = 8192;
+  var QUALITY_PRESETS = [
+    {
+      id: "screen",
+      label: "Screen \xB7 150 DPI",
+      dpi: 150,
+      hint: "Faster, fine for slides"
+    },
+    {
+      id: "print",
+      label: "Print \xB7 300 DPI",
+      dpi: 300,
+      hint: "Journal-grade default"
+    },
+    {
+      id: "ultra",
+      label: "Ultra \xB7 450 DPI",
+      dpi: 450,
+      hint: "Sharper crops, heavier"
+    },
+    {
+      id: "max",
+      label: "Max \xB7 600 DPI",
+      dpi: 600,
+      hint: "Highest; may be slow"
+    }
+  ];
+  var DEFAULT_QUALITY_ID = "print";
+  function getQualityPreset(id) {
+    return QUALITY_PRESETS.find((p2) => p2.id === id) || QUALITY_PRESETS.find((p2) => p2.id === DEFAULT_QUALITY_ID);
+  }
+  function dpiToScale(dpi) {
+    const value = Number(dpi);
+    if (!Number.isFinite(value) || value <= 0) return 300 / PDF_DPI;
+    return value / PDF_DPI;
+  }
+  function resolvePageScale(page, dpi, maxSide = MAX_CANVAS_SIDE) {
+    const requested = dpiToScale(dpi);
+    const base = page.getViewport({ scale: 1 });
+    const maxDim = Math.max(base.width, base.height) || 1;
+    const capped = Math.min(requested, maxSide / maxDim);
+    const scale = Math.max(0.25, capped);
+    const viewport = page.getViewport({ scale });
+    return {
+      scale,
+      dpi: Math.round(scale * PDF_DPI),
+      requestedDpi: Math.round(Number(dpi) || 300),
+      capped: scale + 1e-6 < requested,
+      width: Math.max(1, Math.floor(viewport.width)),
+      height: Math.max(1, Math.floor(viewport.height))
+    };
+  }
+
   // src/extract.js
-  var PAGE_SCALE = 3;
   async function extractFromPdf(data, options) {
     const {
       pdfjs,
       filename = "article.pdf",
       onProgress = () => {
       },
-      pageScale = PAGE_SCALE
+      dpi = getQualityPreset(DEFAULT_QUALITY_ID).dpi
     } = options;
     if (!pdfjs?.getDocument) {
       throw new Error("pdf.js library is not available.");
@@ -74002,11 +74070,16 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
     const slug = articleSlug(filename);
     const assets = [];
     const total = pdf.numPages;
+    let effectiveDpi = Math.round(dpi);
+    let anyCapped = false;
     for (let pageNum = 1; pageNum <= total; pageNum++) {
       const pct = 8 + Math.round(pageNum / total * 88);
-      onProgress(`Rendering page ${pageNum} of ${total}\u2026`, pct);
+      onProgress(`Rendering page ${pageNum} of ${total} at ~${Math.round(dpi)} DPI\u2026`, pct);
       const page = await pdf.getPage(pageNum);
-      const rendered = await renderPageToSvg(page, pageScale, `Page ${pageNum}`);
+      const plan = resolvePageScale(page, dpi);
+      if (plan.capped) anyCapped = true;
+      effectiveDpi = plan.dpi;
+      const rendered = await renderPageToSvg(page, plan.scale, `Page ${pageNum} \xB7 ${plan.dpi} DPI`);
       const n2 = padIndex(pageNum);
       assets.push({
         id: `page-${n2}`,
@@ -74016,6 +74089,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
         page: pageNum,
         width: rendered.width,
         height: rendered.height,
+        dpi: plan.dpi,
         svg: rendered.svg,
         previewUrl: rendered.previewUrl
       });
@@ -74024,10 +74098,13 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
     return {
       slug,
       pageCount: total,
+      dpi: effectiveDpi,
+      requestedDpi: Math.round(dpi),
+      capped: anyCapped,
       assets
     };
   }
-  async function renderPageToSvg(page, scale = PAGE_SCALE, title = "Page") {
+  async function renderPageToSvg(page, scale, title = "Page") {
     const viewport = page.getViewport({ scale });
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(1, Math.floor(viewport.width));
@@ -74040,7 +74117,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
       canvas,
       canvasContext: ctx,
       viewport,
-      intent: "display"
+      intent: "print"
     }).promise;
     const href = canvas.toDataURL("image/png");
     const svg = wrapImageInSvg({
@@ -74155,6 +74232,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
   var fileNameEl = document.getElementById("fileName");
   var clearBtn = document.getElementById("clear");
   var extractBtn = document.getElementById("extract");
+  var qualitySelect = document.getElementById("quality");
   var summary = document.getElementById("summary");
   var statusDetail = document.getElementById("statusDetail");
   var gallery = document.getElementById("gallery");
@@ -74179,6 +74257,13 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
   var displayCrop = null;
   var sourceImage = null;
   var drag = null;
+  function selectedDpi() {
+    return getQualityPreset(qualitySelect?.value).dpi;
+  }
+  function qualityHint() {
+    const preset = getQualityPreset(qualitySelect?.value);
+    return `${preset.label} \u2014 ${preset.hint}`;
+  }
   function setProgress(msg, pct = 0) {
     progress.classList.add("visible");
     progressText.textContent = msg;
@@ -74213,7 +74298,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
     clearBtn.disabled = false;
     extractBtn.disabled = false;
     summary.textContent = `${file.name} \xB7 ${(file.size / (1024 * 1024)).toFixed(2)} MB`;
-    statusDetail.textContent = "Ready to extract pages.";
+    statusDetail.textContent = `Ready \xB7 ${qualityHint()}`;
     gallery.innerHTML = `<div class="gallery-empty">Click <strong>Extract pages</strong> to render this article.</div>`;
     hideProgress();
   }
@@ -74225,6 +74310,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
     clearBtn.disabled = true;
     extractBtn.disabled = true;
     summary.textContent = "Waiting for a PDF.";
+    statusDetail.textContent = "Higher DPI = sharper crops, slower + more memory";
     resetResults();
     hideProgress();
   }
@@ -74254,7 +74340,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
         <div class="asset-meta">
           <span class="tag">Page</span>
           <h3>${escapeHtml(asset.label)}</h3>
-          <p>${asset.width}&times;${asset.height}px</p>
+          <p>${asset.width}&times;${asset.height}px${asset.dpi ? ` \xB7 ${asset.dpi} DPI` : ""}</p>
         </div>
       </div>
     `;
@@ -74490,29 +74576,34 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
   async function runExtract() {
     if (!loaded) return;
     extractBtn.disabled = true;
-    setProgress("Starting\u2026", 2);
+    if (qualitySelect) qualitySelect.disabled = true;
+    const dpi = selectedDpi();
+    setProgress(`Starting at ${dpi} DPI\u2026`, 2);
     try {
       const data = loaded.buffer.slice(0);
       result = await extractFromPdf(data, {
         pdfjs: pdf_exports,
         filename: loaded.file.name,
+        dpi,
         onProgress: setProgress
       });
       selected = null;
       displayCrop = null;
       cropPanel.hidden = true;
       renderGallery(result.assets);
-      summary.textContent = `${loaded.file.name} \xB7 ${result.pageCount} page${result.pageCount === 1 ? "" : "s"}`;
+      const dpiLabel = result.capped ? `${result.dpi} DPI (capped from ${result.requestedDpi})` : `${result.dpi} DPI`;
+      summary.textContent = `${loaded.file.name} \xB7 ${result.pageCount} page${result.pageCount === 1 ? "" : "s"} \xB7 ${dpiLabel}`;
       statusDetail.textContent = `${result.assets.length} page SVG${result.assets.length === 1 ? "" : "s"} ready \u2014 select one to crop.`;
       pageHint.textContent = "Choose a page to crop";
     } catch (err) {
       console.error(err);
       summary.textContent = "Extraction failed.";
       statusDetail.textContent = err?.message || "Unknown error";
-      gallery.innerHTML = `<div class="gallery-empty">Could not process this PDF. Try another file.</div>`;
+      gallery.innerHTML = `<div class="gallery-empty">Could not process this PDF. Try another file${dpi >= 450 ? " or a lower DPI" : ""}.</div>`;
       result = null;
     } finally {
       extractBtn.disabled = !loaded;
+      if (qualitySelect) qualitySelect.disabled = false;
       hideProgress();
     }
   }
@@ -74545,6 +74636,11 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
   });
   clearBtn.addEventListener("click", clearAll);
   extractBtn.addEventListener("click", runExtract);
+  qualitySelect?.addEventListener("change", () => {
+    if (loaded && !result) statusDetail.textContent = `Ready \xB7 ${qualityHint()}`;
+    else if (!loaded) statusDetail.textContent = `${qualityHint()}. Higher DPI uses more memory.`;
+    else statusDetail.textContent = `Quality set to ${qualityHint()} \u2014 re-extract to apply.`;
+  });
   resetCropBtn.addEventListener("click", () => {
     displayCrop = null;
     updateCropUi();

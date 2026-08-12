@@ -1,7 +1,5 @@
 import { articleSlug, padIndex, wrapImageInSvg } from "./svg.js";
-
-/** Default render scale for page SVGs (high-res raster wrapped in SVG). */
-export const PAGE_SCALE = 3;
+import { DEFAULT_QUALITY_ID, getQualityPreset, resolvePageScale } from "./quality.js";
 
 /**
  * Render every page of a PDF ArrayBuffer to high-resolution SVG assets.
@@ -12,14 +10,14 @@ export const PAGE_SCALE = 3;
  * @param {typeof import("pdfjs-dist")} options.pdfjs
  * @param {string} [options.filename]
  * @param {(msg: string, pct?: number) => void} [options.onProgress]
- * @param {number} [options.pageScale]
+ * @param {number} [options.dpi] Target dots-per-inch (default 300)
  */
 export async function extractFromPdf(data, options) {
   const {
     pdfjs,
     filename = "article.pdf",
     onProgress = () => {},
-    pageScale = PAGE_SCALE,
+    dpi = getQualityPreset(DEFAULT_QUALITY_ID).dpi,
   } = options;
 
   if (!pdfjs?.getDocument) {
@@ -36,12 +34,17 @@ export async function extractFromPdf(data, options) {
   const slug = articleSlug(filename);
   const assets = [];
   const total = pdf.numPages;
+  let effectiveDpi = Math.round(dpi);
+  let anyCapped = false;
 
   for (let pageNum = 1; pageNum <= total; pageNum++) {
     const pct = 8 + Math.round((pageNum / total) * 88);
-    onProgress(`Rendering page ${pageNum} of ${total}…`, pct);
+    onProgress(`Rendering page ${pageNum} of ${total} at ~${Math.round(dpi)} DPI…`, pct);
     const page = await pdf.getPage(pageNum);
-    const rendered = await renderPageToSvg(page, pageScale, `Page ${pageNum}`);
+    const plan = resolvePageScale(page, dpi);
+    if (plan.capped) anyCapped = true;
+    effectiveDpi = plan.dpi;
+    const rendered = await renderPageToSvg(page, plan.scale, `Page ${pageNum} · ${plan.dpi} DPI`);
     const n = padIndex(pageNum);
     assets.push({
       id: `page-${n}`,
@@ -51,6 +54,7 @@ export async function extractFromPdf(data, options) {
       page: pageNum,
       width: rendered.width,
       height: rendered.height,
+      dpi: plan.dpi,
       svg: rendered.svg,
       previewUrl: rendered.previewUrl,
     });
@@ -60,12 +64,15 @@ export async function extractFromPdf(data, options) {
   return {
     slug,
     pageCount: total,
+    dpi: effectiveDpi,
+    requestedDpi: Math.round(dpi),
+    capped: anyCapped,
     assets,
   };
 }
 
 /** Render a pdf.js page to a high-resolution PNG embedded in SVG. */
-export async function renderPageToSvg(page, scale = PAGE_SCALE, title = "Page") {
+export async function renderPageToSvg(page, scale, title = "Page") {
   const viewport = page.getViewport({ scale });
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(1, Math.floor(viewport.width));
@@ -79,7 +86,7 @@ export async function renderPageToSvg(page, scale = PAGE_SCALE, title = "Page") 
     canvas,
     canvasContext: ctx,
     viewport,
-    intent: "display",
+    intent: "print",
   }).promise;
 
   const href = canvas.toDataURL("image/png");
