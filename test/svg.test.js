@@ -3,11 +3,14 @@ import assert from "node:assert/strict";
 import {
   articleSlug,
   escapeXml,
-  hashBytes,
-  isFigureCandidate,
   padIndex,
   wrapImageInSvg,
 } from "../src/svg.js";
+import {
+  displayRectToImageRect,
+  isValidCrop,
+  normalizeCropRect,
+} from "../src/crop.js";
 
 describe("articleSlug", () => {
   it("strips pdf extension and normalizes", () => {
@@ -19,28 +22,18 @@ describe("articleSlug", () => {
   });
 });
 
-describe("isFigureCandidate", () => {
-  it("rejects tiny icons", () => {
-    assert.equal(isFigureCandidate({ width: 32, height: 32 }), false);
-  });
-
-  it("accepts journal-sized figures", () => {
-    assert.equal(isFigureCandidate({ width: 800, height: 600 }), true);
-  });
-});
-
 describe("wrapImageInSvg", () => {
   it("emits a standalone SVG with image href", () => {
     const svg = wrapImageInSvg({
       width: 100,
       height: 50,
       href: "data:image/png;base64,AAA",
-      title: "Figure 1",
+      title: "Page 1",
     });
     assert.match(svg, /^<\?xml /);
     assert.match(svg, /viewBox="0 0 100 50"/);
     assert.match(svg, /href="data:image\/png;base64,AAA"/);
-    assert.match(svg, /<title>Figure 1<\/title>/);
+    assert.match(svg, /<title>Page 1<\/title>/);
   });
 });
 
@@ -52,12 +45,30 @@ describe("helpers", () => {
   it("pads indexes", () => {
     assert.equal(padIndex(3), "03");
   });
+});
 
-  it("hashes bytes stably", () => {
-    const a = hashBytes(new Uint8Array([1, 2, 3, 4]));
-    const b = hashBytes(new Uint8Array([1, 2, 3, 4]));
-    const c = hashBytes(new Uint8Array([1, 2, 3, 5]));
-    assert.equal(a, b);
-    assert.notEqual(a, c);
+describe("normalizeCropRect", () => {
+  it("clamps and rounds inverted drags", () => {
+    assert.deepEqual(
+      normalizeCropRect({ x: 80, y: 90, width: -50, height: -40 }, 100, 100),
+      { x: 30, y: 50, width: 50, height: 40 },
+    );
+  });
+
+  it("rejects tiny crops via isValidCrop", () => {
+    assert.equal(isValidCrop({ x: 0, y: 0, width: 4, height: 4 }), false);
+    assert.equal(isValidCrop({ x: 0, y: 0, width: 20, height: 20 }), true);
+  });
+});
+
+describe("displayRectToImageRect", () => {
+  it("maps contain-fit display coords to image pixels", () => {
+    // Image 200x100 shown in 400x400 box → rendered 400x200, offsetY=100
+    const mapped = displayRectToImageRect(
+      { x: 0, y: 100, width: 400, height: 200 },
+      { width: 400, height: 400 },
+      { width: 200, height: 100 },
+    );
+    assert.deepEqual(mapped, { x: 0, y: 0, width: 200, height: 100 });
   });
 });

@@ -1,58 +1,48 @@
 # Figure Extractor — AugmentedMD
 
-Extract the **first page** of a journal article PDF and **all embedded figures** as high-resolution SVG files. Upload in the browser, preview results, then download SVGs individually or as a ZIP.
+Convert **every page** of a journal article PDF into a high-resolution SVG, then **select a page, crop the figure, and download**.
 
 Nothing is uploaded — processing runs entirely on your device.
 
 ## Use
-
-Open the standalone page:
 
 ```bash
 npm install
 npm start
 ```
 
-Then visit [http://localhost:8080/figure-extractor.html](http://localhost:8080/figure-extractor.html).
-
-Or open `figure-extractor.html` directly after `npm run build`.
+Visit [http://localhost:8080/](http://localhost:8080/) (or `figure-extractor.html`).
 
 1. Drop or choose a journal PDF  
-2. Click **Extract SVGs**  
-3. Download each SVG, or **Download ZIP** for all assets  
-
-## What you get
-
-| Asset | Output |
-| --- | --- |
-| First page | `{article}-first-page.svg` — page rendered at 3× scale, wrapped as SVG |
-| Figures | `{article}-figure-01.svg`, … — embedded images at native resolution (icons/tiny assets skipped) |
+2. Click **Extract pages**  
+3. Select a page  
+4. Drag to crop the figure  
+5. **Download SVG** (cropped) or **Download full page**
 
 ## Develop
 
 ```bash
-npm run build   # → figure-extractor.html
-npm test        # unit + build checks
-npm start       # build + local static server on :8080
+npm run build   # → index.html + figure-extractor.html
+npm test
+npm start
 ```
 
 ```
 src/
   template.html   # AugmentedMD chrome
-  ui.css          # design tokens + tool UI
-  app.js          # upload / gallery / downloads
-  extract.js      # pdf.js first-page + figure extraction
+  ui.css          # design tokens + crop UI
+  app.js          # upload / page select / crop / download
+  extract.js      # pdf.js page → high-res SVG
+  crop.js         # crop geometry + SVG export
   svg.js          # SVG wrap + naming helpers
-  download.js     # Blob + ZIP helpers
+  download.js     # Blob download helper
 scripts/build.mjs
-figure-extractor.html   # generated standalone ship file
 ```
 
 ## Stack
 
 - Vanilla HTML/CSS/JS (AugmentedMD theme)
-- [pdf.js](https://mozilla.github.io/pdf.js/) for parsing/rendering
-- [JSZip](https://stuk.github.io/jszip/) for ZIP downloads
+- [pdf.js](https://mozilla.github.io/pdf.js/) for page rendering
 - esbuild single-file bundle
 
 ## License

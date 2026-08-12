@@ -38,30 +38,6 @@ export function articleSlug(filename = "article") {
     .slice(0, 80) || "article";
 }
 
-/**
- * Decide whether an embedded image is large enough to keep as a "figure".
- * Tiny bullets, icons, and tracking pixels are skipped.
- */
-export function isFigureCandidate({ width, height }, { minSide = 96, minPixels = 12_000 } = {}) {
-  const w = Number(width) || 0;
-  const h = Number(height) || 0;
-  if (w < minSide || h < minSide) return false;
-  return w * h >= minPixels;
-}
-
-/** Simple FNV-1a hash for deduplicating identical figure bitmaps. */
-export function hashBytes(bytes) {
-  let h = 0x811c9dc5;
-  const view = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
-  const step = Math.max(1, Math.floor(view.length / 50_000));
-  for (let i = 0; i < view.length; i += step) {
-    h ^= view[i];
-    h = Math.imul(h, 0x01000193);
-  }
-  h ^= view.length;
-  return (h >>> 0).toString(16).padStart(8, "0");
-}
-
 export function padIndex(n, width = 2) {
   return String(n).padStart(width, "0");
 }
