@@ -1,0 +1,19 @@
+{
+  "name": "figure-extractor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Extract the first page and figures from journal article PDFs as high-resolution SVGs — AugmentedMD",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "npm run build && python3 -m http.server 8080",
+    "test": "npm run build --silent && node --test"
+  },
+  "dependencies": {
+    "jszip": "^3.10.1",
+    "pdfjs-dist": "^6.2.108"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.1"
+  }
+}
