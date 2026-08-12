@@ -34,6 +34,7 @@ src/
   ui.css          # design tokens + crop UI
   app.js          # upload / page select / crop / download
   extract.js      # pdf.js page → high-res SVG
+  quality.js      # DPI presets + canvas scale capping
   crop.js         # crop geometry + SVG export
   svg.js          # SVG wrap + naming helpers
   download.js     # Blob download helper
