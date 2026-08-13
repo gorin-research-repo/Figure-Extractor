@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Convert journal PDF pages to high-resolution SVGs, then crop and download figures — AugmentedMD",
+  "description": "Convert journal PDF pages to high-resolution SVGs, then crop and download figures",
   "scripts": {
     "build": "node scripts/build.mjs",
     "start": "npm run build && python3 -m http.server 8080",

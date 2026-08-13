@@ -2,8 +2,6 @@
 
 Convert **every page** of a journal article PDF into a high-resolution SVG, then **select a page, crop the figure, and download**.
 
-Nothing is uploaded — processing runs entirely on your device.
-
 ## Use
 
 ```bash
