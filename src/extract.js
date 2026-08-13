@@ -3,7 +3,6 @@ import { DEFAULT_QUALITY_ID, getQualityPreset, resolvePageScale } from "./qualit
 
 /**
  * Render every page of a PDF ArrayBuffer to high-resolution SVG assets.
- * Runs entirely in-browser via pdf.js — nothing is uploaded.
  *
  * @param {ArrayBuffer} data
  * @param {object} options

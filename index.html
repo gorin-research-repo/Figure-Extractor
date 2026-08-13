@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Figure Extractor — AugmentedMD</title>
-  <meta name="description" content="Convert each page of a journal PDF to a high-resolution SVG, then crop and download the figure you need. Runs entirely in your browser.">
+  <title>Figure Extractor</title>
+  <meta name="description" content="Convert each page of a journal PDF to a high-resolution SVG, then crop and download the tables, text, or figures you need.">
   <style>
 :root{
   --blue:#2055A1;
@@ -48,20 +48,10 @@ button,input{font-family:inherit;font-size:inherit}
   background:var(--white);display:flex;align-items:center;justify-content:space-between;gap:16px
 }
 .brand{display:flex;align-items:center;gap:12px;color:var(--blue);font-size:18px;font-weight:700}
-.logo{
-  display:grid;place-items:center;width:40px;height:40px;border-radius:var(--radius-btn);
-  color:var(--white);background:var(--brand-gradient);font-size:20px;font-weight:700
-}
 .shield{
   display:grid;place-items:center;width:36px;height:36px;border-radius:var(--radius-btn);
   color:var(--white);background:var(--blue)
 }
-.engine{
-  padding:6px 12px;border:1px solid var(--border);border-radius:var(--radius-pill);
-  color:var(--navy);background:var(--card);font-size:12px;font-weight:700;
-  letter-spacing:.04em;text-transform:uppercase
-}
-.header-right{display:flex;align-items:center;gap:12px}
 main{width:min(1140px,calc(100% - 40px));margin:auto}
 .hero{max-width:820px;margin:64px auto;text-align:center}
 .eyebrow{color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
@@ -227,7 +217,6 @@ main{width:min(1140px,calc(100% - 40px));margin:auto}
   main{width:calc(100% - 32px)}
   .header{height:64px;padding:0 16px}
   .hero{margin:48px auto}
-  .engine{display:none}
   .dropzone{margin:16px;min-height:200px;padding:24px 16px}
   .gallery{padding:16px;gap:12px}
   .notice{margin:48px 0}
@@ -238,21 +227,14 @@ main{width:min(1140px,calc(100% - 40px));margin:auto}
 <body>
   <div class="brand-bar"></div>
   <header class="header">
-    <div class="brand">
-      <span class="logo">A</span>
-      <span>AugmentedMD</span>
-    </div>
-    <div class="header-right">
-      <div class="engine">On-device · Private</div>
-      <div class="brand"><span>Figure Extractor</span><span class="shield">&#10003;</span></div>
-    </div>
+    <div class="brand"><span>Figure Extractor</span><span class="shield">&#10003;</span></div>
   </header>
 
   <main>
     <section class="hero">
       <div class="eyebrow">Journal articles · Page SVG · Crop</div>
-      <h1>Turn every page into a high-res SVG, <em>then crop your figure.</em></h1>
-      <p class="sub">Upload a journal PDF. Each page renders on this device as a high-resolution SVG—select a page, crop the figure, and download. Nothing is uploaded to a server.</p>
+      <h1>Turn PDFs into high-res SVGs. <em>Crop out tables, text, or figures for downstream use.</em></h1>
+      <p class="sub">Upload a journal PDF. Each page renders as a high-resolution SVG—select a page, crop the figure, and download.</p>
     </section>
 
     <section class="workspace">

@@ -1,8 +1,6 @@
 # Figure Extractor — AugmentedMD
 
-Convert **every page** of a journal article PDF into a high-resolution SVG, then **select a page, crop the figure, and download**.
-
-Nothing is uploaded — processing runs entirely on your device.
+Convert **every page** of a journal article PDF into a high-resolution SVG, then **select a page, crop out tables, text, or figures, and download**.
 
 ## Use
 
@@ -30,7 +28,7 @@ npm start
 
 ```
 src/
-  template.html   # AugmentedMD chrome
+  template.html   # page shell + inline CSS/JS slots
   ui.css          # design tokens + crop UI
   app.js          # upload / page select / crop / download
   extract.js      # pdf.js page → high-res SVG
