@@ -45,12 +45,12 @@ button,input{font-family:inherit;font-size:inherit}
 .brand-bar{height:8px;background:var(--brand-gradient)}
 .header{
   height:76px;padding:0 max(24px,5vw);border-bottom:1px solid var(--border);
-  background:var(--white);display:flex;align-items:center;justify-content:space-between;gap:16px
+  background:var(--white);display:flex;align-items:center;justify-content:flex-end;gap:16px
 }
 .brand{display:flex;align-items:center;gap:12px;color:var(--blue);font-size:18px;font-weight:700}
-.shield{
+.tool-icon{
   display:grid;place-items:center;width:36px;height:36px;border-radius:var(--radius-btn);
-  color:var(--white);background:var(--blue)
+  color:var(--white);background:var(--blue);font-size:18px;line-height:1
 }
 main{width:min(1140px,calc(100% - 40px));margin:auto}
 .hero{max-width:820px;margin:64px auto;text-align:center}
@@ -229,7 +229,7 @@ main{width:min(1140px,calc(100% - 40px));margin:auto}
   <header class="header">
     <div class="brand">
       <span>Figure Extractor</span>
-      <span class="shield">&#10003;</span>
+      <span class="tool-icon" aria-hidden="true">&#128196;</span>
     </div>
   </header>
 
