@@ -4,11 +4,13 @@ import { readFile } from "node:fs/promises";
 import { buildStandalone } from "../scripts/build.mjs";
 
 describe("standalone build", () => {
-  it("inlines AugmentedMD chrome and page-crop workflow", async () => {
+  it("inlines chrome and page-crop workflow", async () => {
     const html = await buildStandalone();
     assert.match(html, /Figure Extractor/);
     assert.match(html, /--brand-gradient/);
-    assert.match(html, /AugmentedMD/);
+    assert.match(html, /@AugmentedMD/);
+    assert.doesNotMatch(html, /On-device/);
+    assert.doesNotMatch(html, /Nothing is uploaded/);
     assert.match(html, /Extract pages/);
     assert.match(html, /Crop figure/);
     assert.match(html, /Render quality|300 DPI/);
