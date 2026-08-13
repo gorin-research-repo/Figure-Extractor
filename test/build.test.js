@@ -9,6 +9,8 @@ describe("standalone build", () => {
     assert.match(html, /Figure Extractor/);
     assert.match(html, /--brand-gradient/);
     assert.match(html, /@AugmentedMD/);
+    assert.match(html, /&#128196;/);
+    assert.doesNotMatch(html, /&#10003;/);
     assert.doesNotMatch(html, /On-device/);
     assert.doesNotMatch(html, /Nothing is uploaded/);
     assert.match(html, /Extract pages/);
